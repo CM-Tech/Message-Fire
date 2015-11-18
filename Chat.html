@@ -146,7 +146,7 @@
         <script>
             var userName = "Anomonys";
             var userPicture="";
-            var myDataRef = new Firebase('https://messagefire.firebaseio.com/');
+            var myDataRef = new Firebase('https://messagefiretes.firebaseio.com/');
             myDataRef.authWithOAuthPopup("google", function(error, authData) {
                 userName = authData.google.displayName;
                 userPicture= authData.google.profileImageURL;
