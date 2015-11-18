@@ -1,0 +1,242 @@
+<html>
+
+    <head>
+        <script></script>
+
+
+        <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <style>::-webkit-scrollbar {
+    width: 12px;
+}
+ 
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    border-radius: 10px;
+}
+ 
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}
+            #c {
+                width:100%;
+                height:100%;
+                background:white;
+            }
+            body {
+                margin:0;
+                background:url(http://s2.postimg.org/sp4k80epl/Message_Fire.png);
+                 background-size: cover; 
+                 background-position: center;
+            }
+            div.chat {
+                color:orange;
+                display:absolute;
+                position: absolute;
+                top: calc(50% - 250px);
+                left: calc(50% - 150px);
+                width:300px;
+                border:none;
+                background:rgba(128,0,0,0.5);
+                
+                height:500px;
+                font-size:15px;
+                color:black;
+                overflow:hidden;
+                border-radius:10px;
+            }
+            .chat-input {
+                display:absolute;
+                position: absolute;
+                bottom:0;
+                left:10;
+                width:280px;
+                border:none;
+                border-top:1px solid orange;
+                background:none;
+                outline:none;
+                height:30;
+                font-size:15px;
+                color:orange;
+            }
+            .chat-list-scroll{
+                overflow-y:scroll;
+                height:449px;
+                width:290px;
+                margin-top:10px;
+            }
+            .chat-list {
+                width:280px;
+                border:none;
+                list-style:none;
+                background:none;
+                outline:none;
+                font-size:15px;
+                color:orange;
+                
+            }
+            .chat-list chat {
+                max-width:280px;
+                display:block;
+                margin-bottom:20px;
+                border-radius:10px;
+                padding:10px;
+                margin-bottom:20px;
+            }
+            .chat-list cn {
+                display:block;
+                padding:10px;
+                display:box;
+                color:orange;
+            }
+             .chat-list cn img {
+                 vertical-align:middle;
+                margin-right:10px;
+                border-radius:15px;
+            }
+            .chat-list ct {
+                max-width:210px;
+      
+                margin-left:10;
+                display:block;
+                word-break: break-word;
+                padding:10px;
+                margin-bottom:20px;
+                margin-top:10px;
+                background:orange;
+                border-radius:10px;
+                color:darkred;
+            }
+            #overlay {
+                display:absolute;
+                position: absolute;
+                left: 0px;
+                right: 0px;
+                top: 0px;
+                bottom: 0px;
+                z-index: 100;
+                display: block;
+            }
+        </style>
+        <title>
+        </title>
+
+    </head>
+
+    <body>
+        <div id="overlay">
+
+            <div class="chat">
+                <div class="chat-list-scroll">
+                <chatlist class="chat-list">
+                    <chat>
+                        <cn>bob:</cn>
+                        <ct>hi</ct>
+                    </chat>
+                    <chat>
+                        <cn>bob:</cn>
+                        <ct>HEHJCHJHGJDGJDGJDGJHDGJDGJDG JGJGJGJH</ct>
+                    </chat>
+                </chatlist>
+                </div>
+                <input class="chat-input" value="" placeHolder="Type Here">
+            </div>
+        </div>
+        <script>
+            var userName = "Anomonys";
+            var userPicture="";
+            var myDataRef = new Firebase('https://messagefiretest.firebaseio.com/');
+            myDataRef.authWithOAuthPopup("google", function(error, authData) {
+                userName = authData.google.displayName;
+                userPicture= authData.google.profileImageURL;
+            }, {
+                remember: "sessionOnly",
+                scope: "email"
+            });
+            var timeRef = myDataRef.child("time");
+            var serverTime = 0;
+            var lastData;
+            var lastChatData;
+            var chatRef = myDataRef.child("chat");
+            //chatRef.set(["server"])
+             $(".chat-input").keypress(function(e) {
+
+                if (e.which == '13') {
+                    e.preventDefault();
+                    var now = new Date();
+                    var now_utc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
+                    chatRef.push({
+                            time: Firebase.ServerValue.TIMESTAMP,
+                            message: $(".chat-input").val(),
+                            user: userName,
+                            pic:userPicture
+                        });
+                    $(".chat-input").val("");
+                }
+
+            });
+            setInterval(tick,1);
+            function tick() {
+                if(469 - $("chatlist.chat-list").height()>0){
+                $("chatlist.chat-list").css("margin-top", (469 - $("chatlist.chat-list").height()));
+                }else{
+                    $("chatlist.chat-list").css("margin-top", 0);
+                }
+                $("chatlist.chat-list").html("");
+                var chatCount = -1;
+                lastChatData.forEach(function(data) {
+                    chatCount++;
+                    if (chatCount > 0) {
+                        if (Math.abs(serverTime - data.val().time) < 100000) {
+                            $("chatlist.chat-list").html($("chatlist.chat-list").html() + "<chat><cn><img width='30' height='30' src=\'"+data.val().pic+"\' </img>" + data.val().user + ":</cn><ct>" + data.val().message + "</ct></chat>");
+                        } else {
+                            chatRef.child(data.key()).set(null);
+                        }
+                    }
+                });
+            }
+            myDataRef.on('value', function(snapshot) {
+                lastData = snapshot;
+            });
+
+            timeRef.on('value', function(snapshot) {
+                serverTime = snapshot.val();
+                timeRef.set(Firebase.ServerValue.TIMESTAMP);
+            });
+            chatRef.on("value", function(snapshot) {
+                //console.log("value");
+                lastChatData = snapshot;
+                /*snapshot.forEach(function(data) {
+        allPlayers[
+    i++;
+
+    });*/
+
+            });
+            chatRef.on("child_added", function(snapshot, prevChildKey) {
+                $("chatlist.chat-list").html("");
+                                var chatCount = -1;
+                lastChatData.forEach(function(data) {
+                    chatCount++;
+                    if (chatCount > 0) {
+                        if (Math.abs(serverTime - data.val().time) < 100000) {
+                            $("chatlist.chat-list").html($("chatlist.chat-list").html() + "<chat><cn><img width='30' height='30' src=\'"+data.val().pic+"\' </img>" + data.val().user + ":</cn><ct>" + data.val().message + "</ct></chat>");
+                        } else {
+                            chatRef.child(data.key()).set(null);
+                        }
+                    }
+                });
+                if(469 - $("chatlist.chat-list").height()>0){
+                $("chatlist.chat-list").css("margin-top", (469 - $("chatlist.chat-list").height()));
+                }else{
+                    $("chatlist.chat-list").css("margin-top", 0);
+                }
+                
+
+                $(".chat-list-scroll").scrollBottom();
+});
+        </script>
+    </body>
+
+</html>
